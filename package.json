@@ -1,0 +1,44 @@
+{
+  "name": "opencode-hud",
+  "version": "0.1.0",
+  "description": "OpenCode HUD - Real-time status display plugin",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/hud-process.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.1.4",
+    "@opencode-ai/sdk": "^1.1.4",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "hud",
+    "status",
+    "monitoring"
+  ],
+  "author": "twischen-dot",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/twischen-dot/opencode-hud"
+  }
+}

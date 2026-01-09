@@ -42,14 +42,14 @@ export const HUDPlugin = async (ctx: any): Promise<any> => {
             model: input.model.modelID,
           };
         }
-        notifyStateChange();
+        await notifyStateChange();
       }
     },
 
     "tool.execute.before": async (input: any) => {
       if (globalState) {
         globalState.lastActivity = new Date();
-        notifyStateChange();
+        await notifyStateChange();
       }
     },
 
@@ -58,7 +58,7 @@ export const HUDPlugin = async (ctx: any): Promise<any> => {
         const count = globalState.tools.get(input.tool) || 0;
         globalState.tools.set(input.tool, count + 1);
         globalState.lastActivity = new Date();
-        notifyStateChange();
+        await notifyStateChange();
       }
     },
 
@@ -73,14 +73,14 @@ export const HUDPlugin = async (ctx: any): Promise<any> => {
     },
   };
 
-  function notifyStateChange() {
-    writeStateFile();
+  async function notifyStateChange() {
+    await writeStateFile();
   }
 
-  function writeStateFile() {
+  async function writeStateFile() {
     if (!globalState) return;
 
-    const statePath = getHUDStatePath();
+    const statePath = await getHUDStatePath();
     const stateData = {
       sessionId: globalState.sessionId,
       messages: globalState.messages,
@@ -90,7 +90,7 @@ export const HUDPlugin = async (ctx: any): Promise<any> => {
     };
 
     try {
-      const fs = require("fs");
+      const fs = await import("fs");
       fs.writeFileSync(statePath, JSON.stringify(stateData, null, 2));
     } catch (error) {
       console.error("[HUD Plugin] Failed to write state:", error);
@@ -98,11 +98,12 @@ export const HUDPlugin = async (ctx: any): Promise<any> => {
   }
 };
 
-export function getHUDStatePath(): string {
-  const os = require("os");
-  const path = require("path");
-  const tmpdir = os.tmpdir();
-  return path.join(tmpdir, "opencode-hud-state.json");
+export function getHUDStatePath(): Promise<string> {
+  return (async () => {
+    const os = await import("os");
+    const path = await import("path");
+    return path.default.join(os.default.tmpdir(), "opencode-hud-state.json");
+  })();
 }
 
 function getStatusReport(): string {

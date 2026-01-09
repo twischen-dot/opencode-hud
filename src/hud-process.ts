@@ -1,7 +1,5 @@
 import { getHUDStatePath } from "./plugin.js";
 import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
 
 interface HUDState {
   sessionId: string;
@@ -15,12 +13,14 @@ interface HUDState {
 }
 
 class HUDProcess {
-  private statePath: string;
+  private statePath: string | null = null;
   private lastState: HUDState | null = null;
   private timer: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.statePath = getHUDStatePath();
+    getHUDStatePath().then((path) => {
+      this.statePath = path;
+    });
   }
 
   start() {
@@ -35,8 +35,8 @@ class HUDProcess {
     }, 300);
   }
 
-  private render() {
-    const state = this.readState();
+  private async render() {
+    const state = await this.readState();
     if (!state) {
       this.renderEmpty();
       return;
@@ -51,18 +51,26 @@ class HUDProcess {
     this.renderState(state);
   }
 
-  private readState(): HUDState | null {
+  private async readState(): Promise<HUDState | null> {
     try {
-      if (!fs.existsSync(this.statePath)) {
+      const statePath = await this.getStatePath();
+      if (!fs.existsSync(statePath)) {
         return null;
       }
 
-      const content = fs.readFileSync(this.statePath, "utf-8");
+      const content = fs.readFileSync(statePath, "utf-8");
       return JSON.parse(content) as HUDState;
     } catch (error) {
       console.error("[HUD Process] Failed to read state:", error);
       return null;
     }
+  }
+
+  private async getStatePath(): Promise<string> {
+    if (!this.statePath) {
+      this.statePath = await getHUDStatePath();
+    }
+    return this.statePath;
   }
 
   private renderState(state: HUDState) {
@@ -76,28 +84,28 @@ class HUDProcess {
       .join("\n");
 
     const output = `
-╔══════════════════════════════════════════════════════════╗
+╔════════════════════════════════════════════════════════╗
 ║                    OpenCode HUD v0.1.0                    ║
-╠══════════════════════════════════════════════════════════╣
+╠════════════════════════════════════════════════════════╣
 ║  Session: ${state.sessionId.substring(0, 8)}${" ".repeat(40)}  ║
 ║  Model: ${state.model ? `${state.model.provider}/${state.model.model}` : "N/A"}${" ".repeat(38)}  ║
 ║  Messages: ${state.messages}${" ".repeat(45)}  ║
 ║  Activity: ${timeStr} ago${" ".repeat(39)}  ║
 ║${" ".repeat(58)}║
 ║  Tools:${" ".repeat(51)}  ║${toolLines ? toolLines.split("\n").map(line => `║${line}${" ".repeat(58 - line.length)}║`).join("\n") : `║  None${" ".repeat(51)}  ║`}
-╚══════════════════════════════════════════════════════════╝
+╚════════════════════════════════════════════════════════╝
 `;
     process.stdout.write(output);
   }
 
   private renderEmpty() {
     const output = `
-╔══════════════════════════════════════════════════════════╗
+╔════════════════════════════════════════════════════════╗
 ║                    OpenCode HUD v0.1.0                    ║
-╠══════════════════════════════════════════════════════════╣
+╠════════════════════════════════════════════════════════╣
 ║  Waiting for OpenCode session...                            ║
 ║  Start OpenCode to see real-time status.                    ║
-╚══════════════════════════════════════════════════════════╝
+╚════════════════════════════════════════════════════════╝
 `;
     process.stdout.write(output);
   }

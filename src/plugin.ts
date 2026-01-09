@@ -1,4 +1,5 @@
 import type { Plugin } from "@opencode-ai/plugin";
+import { tool } from "@opencode-ai/plugin/tool";
 
 export interface HUDState {
   sessionId: string;
@@ -13,7 +14,7 @@ export interface HUDState {
 
 let globalState: HUDState | null = null;
 
-export const HUDPlugin: Plugin = async (ctx) => {
+export const HUDPlugin = async (ctx: any): Promise<any> => {
   console.log("[HUD Plugin] Initializing...");
 
   globalState = {
@@ -25,7 +26,7 @@ export const HUDPlugin: Plugin = async (ctx) => {
   };
 
   return {
-    "chat.message": async (input) => {
+    "chat.message": async (input: any) => {
       if (globalState && input.sessionID !== globalState.sessionId) {
         globalState.sessionId = input.sessionID;
         globalState.messages = 0;
@@ -45,14 +46,14 @@ export const HUDPlugin: Plugin = async (ctx) => {
       }
     },
 
-    "tool.execute.before": async (input) => {
+    "tool.execute.before": async (input: any) => {
       if (globalState) {
         globalState.lastActivity = new Date();
         notifyStateChange();
       }
     },
 
-    "tool.execute.after": async (input, output) => {
+    "tool.execute.after": async (input: any, output: any) => {
       if (globalState) {
         const count = globalState.tools.get(input.tool) || 0;
         globalState.tools.set(input.tool, count + 1);
@@ -62,14 +63,15 @@ export const HUDPlugin: Plugin = async (ctx) => {
     },
 
     tool: {
-      "hud:status": {
+      "hud:status": tool({
         description: "显示当前 HUD 状态",
-        async execute() {
+        args: {},
+        async execute(args: any, context: any) {
           return getStatusReport();
         },
-      },
+      }),
     },
-  } as const;
+  };
 
   function notifyStateChange() {
     writeStateFile();
@@ -113,7 +115,7 @@ function getStatusReport(): string {
     .join(", ");
 
   const timeSince = Math.floor((Date.now() - globalState.lastActivity.getTime()) / 1000);
-  const timeStr = timeSince < 60 ? `${timeSecond}s` : `${Math.floor(timeSince / 60)}m`;
+  const timeStr = timeSince < 60 ? `${timeSince}s` : `${Math.floor(timeSince / 60)}m`;
 
   return `
 [OpenCode HUD]
